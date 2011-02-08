@@ -91,6 +91,7 @@ function dependent_fields_elements() {
     $elements[$widget]['#element_validate'] = array('dependent_fields_element_validate');
   }
 
+  $elements['text_textfield']['#process'][] = 'dependent_fields_textfield_process';
   $elements['optionwidgets_select']['#process'][] = 'dependent_fields_optionwidgets_process';
   $elements['optionwidgets_buttons']['#process'][] = 'dependent_fields_optionwidgets_process';
 
@@ -634,6 +635,14 @@ function dependent_fields_wrapper_process($element, $edit, &$form_state, $form) 
 
   if (is_array($element['#fields'])) {
     foreach ($element['#fields'] as $field_name => $field_element) {
+      // Need to add this cause for some reason the element is in
+      // the 0 element instead of the root. eg text_textfield.
+      if(is_array($field_element[0])) {
+        foreach($field_element[0] as $key => $value) {
+          $field_element[$key] = isset($field_element[$key])? $field_element[$key]: $value;
+        }
+        unset($field_element[0]);
+      }
       // If there is only one field, we set the weight of the wrapper to match it.
       if ($element['#field_count'] == 1) {
         $element['#weight'] = $field_element['#weight'];

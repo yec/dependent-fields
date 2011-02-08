@@ -145,3 +145,25 @@ function dependent_fields_optionwidgets_process($element, $edit, &$form_state, $
 
   return $element;
 }
+
+function dependent_fields_textfield_process($element, $edit, &$form_state, $form) {
+  $field = content_fields($element['#field_name'], $element['#type_name']);
+  $info = dependent_fields_build_field_info($field, $form_state);
+
+  $column = $element['#columns'][0];
+  $options = &$element[$column]['#options'];
+  $option_count = count($element[$column]['#options']);
+  $value = &$element['#value'][$column];
+
+  file_put_contents('/tmp/process',print_r($info,1).print_r($field,1).print_r($element,1),FILE_APPEND);
+  if($info['controller_value'][$column] != $field['widget']['dependent_fields']['allowed_mapping']['mapping']) {
+    $element['#type'] = 'hidden';
+    unset($element['#value']);
+    form_set_value($element, NULL, $form_state);
+    dependent_fields_set_form_state($form_state);
+    return $element;
+  }
+  form_set_value($element, $element['#value'], $form_state);
+  dependent_fields_set_form_state($form_state);
+  return $element;
+}

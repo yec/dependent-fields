@@ -42,6 +42,9 @@ function dependent_fields_text_info() {
 function dependent_fields_text_widget_form($widget, $field, $type) {
   $form = array();
   $allowed_mapping = isset($widget['dependent_fields']['allowed_mapping']['mapping']) ? $widget['dependent_fields']['allowed_mapping']['mapping'] : '';
+  $description = $widget['type'] == 'text_textfield' ? \
+    t('Enter the value of the controller field you want this field to show up on.'): \
+    t('Enter the mappings between this field and the controller field. Enter one mapping per line, in the format controller_key|key1,key2,key3,key4. The controller_key is the value from the controller field, and key1, key2, key3, should be in this fields allowed values.');
 
   $form['allowed_mapping'] = array(
     '#type' => 'fieldset',
@@ -56,7 +59,7 @@ function dependent_fields_text_widget_form($widget, $field, $type) {
     '#default_value' => $allowed_mapping,
     '#required' => FALSE,
     '#rows' => 8,
-    '#description' => t('Enter the mappings between this field and the controller field. Enter one mapping per line, in the format controller_key|key1,key2,key3,key4. The controller_key is the value from the controller field, and key1, key2, key3, should be in this fields allowed values.'),
+    '#description' => $description,
   );
 
   return $form;
