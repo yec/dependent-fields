@@ -1,0 +1,13 @@
+; $Id: dependent_fields.info,v 1.1.2.3 2011/01/20 09:56:53 smoothify Exp $
+name = Dependent Fields
+description = Allows CCK fields to specify a controller field and react to its changes via AHAH.
+dependencies[] = content
+package = CCK
+core = 6.x
+
+; Information added by drupal.org packaging script on January 1, 1970 - 00:00
+version = "6.x-1.x-dev"
+core = "6.x"
+project = "dependent_fields"
+datestamp = "1296216835"
+

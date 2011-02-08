@@ -1,0 +1,11 @@
+<?php
+// $Id: dependent_fields.install,v 1.1.2.4 2011/01/20 09:56:53 smoothify Exp $
+
+/**
+ * @file
+ * Implementation of hook_install().
+ */
+function dependent_fields_install() {
+  // Dependent Fields needs to load after all CCK field related modules.
+  db_query("UPDATE {system} SET weight = 20 WHERE type = 'module' AND name = 'dependent_fields'");
+}

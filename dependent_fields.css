@@ -1,0 +1,21 @@
+/* $Id: dependent_fields.css,v 1.1.2.2 2011/01/09 18:13:32 smoothify Exp $ */
+
+/* Clear the floats, so the ahah wrapper doesn't move things about */
+.fallback-button-wrapper {
+  clear: both;
+}
+
+.dependent-fields-controller div.description {
+  clear: both;
+}
+
+/* Keep it the fallback button close to the controller element */
+.ahah-fallback-button {
+  margin-top: 0em !important;
+}
+
+/* hide the fallback button when not degrading to non-javascript browser */
+html.js .ahah-fallback-button {
+  display: none; 
+}
+
