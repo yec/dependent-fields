@@ -107,19 +107,28 @@ function dependent_fields_widget_settings_form(&$form, $widget, $field, $type) {
       '#default_value' => $controller_field,
     );
 
-    $form['dependent_fields']['hide_if_empty'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Hide if Empty'),
-      '#description' => t('Should this field be hidden if the list of allowed options is empty.'),
-      '#default_value' => $hide_if_empty,
-    );
-    $form['dependent_fields']['hide_none'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Hide None Option'),
-      '#description' => t('For non-required fields, should the None option be hidden from select and button lists'),
-      '#default_value' => $hide_none,
-    );
+    /**
+     * If widget type is text_textfield then dont use the hide if empty and hide none options
+     * desired behaivour is to show the field if a value from allowed values mapping is
+     * selected from the controller field
+     */
+    if ($widget['type'] != 'text_textfield') {
+
+      $form['dependent_fields']['hide_if_empty'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Hide if Empty'),
+        '#description' => t('Should this field be hidden if the list of allowed options is empty.'),
+        '#default_value' => $hide_if_empty,
+      );
+      $form['dependent_fields']['hide_none'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Hide None Option'),
+        '#description' => t('For non-required fields, should the None option be hidden from select and button lists'),
+        '#default_value' => $hide_none,
+      );
+    }
     $params = array($widget, $field, $type);
+    // Merge in the widget specific config into the form
     $form['dependent_fields'] = array_merge($form['dependent_fields'], dependent_fields_invoke_field($field['type'], 'widget_form', $params));
   }
   else {

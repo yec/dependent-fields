@@ -1,0 +1,128 @@
+diff --git a/dependent_fields.module b/dependent_fields.module
+index 28f60e6..0a9e93f 100644
+--- a/dependent_fields.module
++++ b/dependent_fields.module
+@@ -91,6 +91,7 @@ function dependent_fields_elements() {
+     $elements[$widget]['#element_validate'] = array('dependent_fields_element_validate');
+   }
+ 
++  $elements['text_textfield']['#process'][] = 'dependent_fields_textfield_process';
+   $elements['optionwidgets_select']['#process'][] = 'dependent_fields_optionwidgets_process';
+   $elements['optionwidgets_buttons']['#process'][] = 'dependent_fields_optionwidgets_process';
+ 
+@@ -634,6 +635,14 @@ function dependent_fields_wrapper_process($element, $edit, &$form_state, $form)
+ 
+   if (is_array($element['#fields'])) {
+     foreach ($element['#fields'] as $field_name => $field_element) {
++      // Need to add this cause for some reason the element is in
++      // the 0 element instead of the root. eg text_textfield.
++      if(is_array($field_element[0])) {
++        foreach($field_element[0] as $key => $value) {
++          $field_element[$key] = isset($field_element[$key])? $field_element[$key]: $value;
++        }
++        unset($field_element[0]);
++      }
+       // If there is only one field, we set the weight of the wrapper to match it.
+       if ($element['#field_count'] == 1) {
+         $element['#weight'] = $field_element['#weight'];
+diff --git a/fields/text.inc b/fields/text.inc
+index 24281f7..6331882 100644
+--- a/fields/text.inc
++++ b/fields/text.inc
+@@ -42,6 +42,9 @@ function dependent_fields_text_info() {
+ function dependent_fields_text_widget_form($widget, $field, $type) {
+   $form = array();
+   $allowed_mapping = isset($widget['dependent_fields']['allowed_mapping']['mapping']) ? $widget['dependent_fields']['allowed_mapping']['mapping'] : '';
++  $description = $widget['type'] == 'text_textfield' ? \
++    t('Enter the value of the controller field you want this field to show up on.'): \
++    t('Enter the mappings between this field and the controller field. Enter one mapping per line, in the format controller_key|key1,key2,key3,key4. The controller_key is the value from the controller field, and key1, key2, key3, should be in this fields allowed values.');
+ 
+   $form['allowed_mapping'] = array(
+     '#type' => 'fieldset',
+@@ -56,7 +59,7 @@ function dependent_fields_text_widget_form($widget, $field, $type) {
+     '#default_value' => $allowed_mapping,
+     '#required' => FALSE,
+     '#rows' => 8,
+-    '#description' => t('Enter the mappings between this field and the controller field. Enter one mapping per line, in the format controller_key|key1,key2,key3,key4. The controller_key is the value from the controller field, and key1, key2, key3, should be in this fields allowed values.'),
++    '#description' => $description,
+   );
+ 
+   return $form;
+diff --git a/includes/admin.inc b/includes/admin.inc
+index f108c35..904fe8c 100644
+--- a/includes/admin.inc
++++ b/includes/admin.inc
+@@ -107,19 +107,28 @@ function dependent_fields_widget_settings_form(&$form, $widget, $field, $type) {
+       '#default_value' => $controller_field,
+     );
+ 
+-    $form['dependent_fields']['hide_if_empty'] = array(
+-      '#type' => 'checkbox',
+-      '#title' => t('Hide if Empty'),
+-      '#description' => t('Should this field be hidden if the list of allowed options is empty.'),
+-      '#default_value' => $hide_if_empty,
+-    );
+-    $form['dependent_fields']['hide_none'] = array(
+-      '#type' => 'checkbox',
+-      '#title' => t('Hide None Option'),
+-      '#description' => t('For non-required fields, should the None option be hidden from select and button lists'),
+-      '#default_value' => $hide_none,
+-    );
++    /**
++     * If widget type is text_textfield then dont use the hide if empty and hide none options
++     * desired behaivour is to show the field if a value from allowed values mapping is
++     * selected from the controller field
++     */
++    if ($widget['type'] != 'text_textfield') {
++
++      $form['dependent_fields']['hide_if_empty'] = array(
++        '#type' => 'checkbox',
++        '#title' => t('Hide if Empty'),
++        '#description' => t('Should this field be hidden if the list of allowed options is empty.'),
++        '#default_value' => $hide_if_empty,
++      );
++      $form['dependent_fields']['hide_none'] = array(
++        '#type' => 'checkbox',
++        '#title' => t('Hide None Option'),
++        '#description' => t('For non-required fields, should the None option be hidden from select and button lists'),
++        '#default_value' => $hide_none,
++      );
++    }
+     $params = array($widget, $field, $type);
++    // Merge in the widget specific config into the form
+     $form['dependent_fields'] = array_merge($form['dependent_fields'], dependent_fields_invoke_field($field['type'], 'widget_form', $params));
+   }
+   else {
+diff --git a/includes/form_elements.inc b/includes/form_elements.inc
+index 812d684..46e594d 100644
+--- a/includes/form_elements.inc
++++ b/includes/form_elements.inc
+@@ -144,4 +144,26 @@ function dependent_fields_optionwidgets_process($element, $edit, &$form_state, $
+   }
+ 
+   return $element;
+-}
+\ No newline at end of file
++}
++
++function dependent_fields_textfield_process($element, $edit, &$form_state, $form) {
++  $field = content_fields($element['#field_name'], $element['#type_name']);
++  $info = dependent_fields_build_field_info($field, $form_state);
++
++  $column = $element['#columns'][0];
++  $options = &$element[$column]['#options'];
++  $option_count = count($element[$column]['#options']);
++  $value = &$element['#value'][$column];
++
++  file_put_contents('/tmp/process',print_r($info,1).print_r($field,1).print_r($element,1),FILE_APPEND);
++  if($info['controller_value'][$column] != $field['widget']['dependent_fields']['allowed_mapping']['mapping']) {
++    $element['#type'] = 'hidden';
++    unset($element['#value']);
++    form_set_value($element, NULL, $form_state);
++    dependent_fields_set_form_state($form_state);
++    return $element;
++  }
++  form_set_value($element, $element['#value'], $form_state);
++  dependent_fields_set_form_state($form_state);
++  return $element;
++}
